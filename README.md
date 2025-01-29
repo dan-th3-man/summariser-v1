@@ -1,126 +1,107 @@
 # Discord Chat Analyzer
 
-A powerful Python script that analyzes Discord chat exports and generates comprehensive summaries using local LLM models through Ollama.
+A TypeScript-based service that analyzes Discord chat history from Supabase and generates comprehensive summaries using OpenAI's GPT-4.
 
 ## Features
 
-- **Smart Message Analysis**: Processes Discord chat exports and generates structured analysis including:
+- **Smart Message Analysis**: Processes Discord chat history and generates structured analysis including:
+
   - Concise technical discussion summaries
-  - FAQ compilation from discussions 
-  - Help interaction tracking
+  - FAQ compilation from discussions
+  - Help interaction tracking with point rewards
   - Action item extraction
 
 - **Efficient Processing**:
+
   - Chunks messages for optimal processing
-  - Uses local LLM models via Ollama
-  - Progress tracking with rich CLI interface
-  - Graceful shutdown handling
+  - Uses GPT-4 for analysis
+  - Progress tracking with detailed console output
+  - Error handling and recovery
 
 - **Structured Output**:
-  - Markdown formatted reports
+  - JSON formatted analysis
+  - Point-based help interaction tracking
   - Categorized action items
-  - Clear help interaction summaries
   - FAQ compilation
 
 ## Prerequisites
 
-- Python 3.8+
-- [Ollama](https://ollama.ai/) installed and running
-  - https://ollama.com/download
-- Required Python packages:
-  ```
-  langchain_ollama
-  python-dateutil
-  rich
-  pydantic
+- Node.js 18+
+- Supabase project with Discord messages
+- OpenAI API key
+- Required environment variables:
+  ```env
+  SUPABASE_URL=your_supabase_url
+  SUPABASE_KEY=your_supabase_key
+  OPENAI_API_KEY=your_openai_key
   ```
 
 ## Installation
 
-1. Clone the repository or download the script
-2. Install required packages:
+1. Clone the repository
+2. Install dependencies:
 
 ```bash
-pip install langchain_ollama python-dateutil rich pydantic
+pnpm install
 ```
-3. Ensure Ollama is installed and running with a compatible model (default: phi3-chat)
-
-The Modelfile is configured for a Linux system. Edit the Modelfile for your system: https://github.com/ollama/ollama/blob/main/docs/modelfile.md
-
-```bash
-# Pull whatever model you want to use, phi3 worked best in our tests for summarizing
-ollama run phi3:14b-medium-4k-instruct-q5_K_M
-
-# Edit the Modelfile first for your system
-ollama create phi3-chat -f Modelfile 
-```
-
-> Note: For exporting Discord Chats you can look into using the Discord API and make a bot. Code soon.
-> If using [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter) a preprocess script is provided to make a more compact version of the JSON file to save on tokens
 
 ## Usage
 
 Basic usage:
+
 ```bash
-python summarize.py -i samples/chat_export.json -o /path/to/output.md
+# Get messages from a channel
+pnpm messages [serverId] [channelId] [days]
+
+# Analyze messages
+pnpm analyze [serverId] [channelId] [days]
 ```
 
 Arguments:
-- `-i, --input`: Path to Discord chat export JSON file (required)
-- `-o, --output`: Path to save the analysis output file (optional)
 
-If no output path is specified, the analysis will be printed to stdout.
+- `serverId`: Discord server ID (optional, defaults to configured ID)
+- `channelId`: Discord channel ID (optional, analyzes all channels if omitted)
+- `days`: Number of days to analyze (optional, defaults to 7)
 
 ## Output Format
 
-The script generates a structured markdown report containing:
+The script generates a structured JSON output containing:
 
 1. **Summary**: Focused technical discussion overview
 2. **FAQ**: Important questions and answers from the chat
-3. **Help Interactions**: Tracking of community support
+3. **Help Interactions**: Community support tracking with point rewards:
+   - 50-100 points: Direct problem solving
+   - 30-80 points: Detailed explanations
+   - 10-30 points: Quick answers
+   - 5-10 points: Future help promises
 4. **Action Items**: Categorized into:
    - Technical Tasks
    - Documentation Needs
    - Feature Requests
 
-> Note: using https://github.com/njvack/markdown-to-json to convert to JSON to make embedding to Eliza knowledge easier
-
 ## Customization
 
-You can modify the script's behavior by adjusting:
+You can modify the analysis behavior by adjusting:
 
-- Model settings in `__init__`:
-  ```python
-  self.model = ChatOllama(
-      model=model_name,
-      temperature=0.2,
-      num_ctx=4096,
-      ...
-  )
-  ```
-- Chunk size in `_chunk_messages`
-- Analysis structure in `format_structured_prompt`
-- Output formatting in `_format_markdown`
+- Model settings in `AnalyzerService`
+- Chunk size in `analyzeChat`
+- Analysis structure in `formatPrompt`
+- Output formatting in `mergeAnalyses`
 
 ## Error Handling
 
-The script includes:
-- Graceful CTRL+C handling
-- LLM initialization error catching
-- Progress tracking
-- Chunk processing error recovery
+The service includes:
 
+- Graceful error recovery
+- Progress tracking
+- Chunk processing error handling
+- Invalid response structure handling
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Acknowledgments
+## License
 
-- Uses [Ollama](https://ollama.ai/) for local LLM processing
-- Built with [LangChain](https://python.langchain.com/) and [Rich](https://rich.readthedocs.io/)
-
-## To-do
-
-- Explore structured outputs from ollama
-- Integrate into the Eliza framework
+MIT
+# summariser-v1
