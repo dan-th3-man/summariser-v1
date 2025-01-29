@@ -1,0 +1,21 @@
+{
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "analyze": "ts-node src/scripts/analyzeMessages.ts",
+    "messages": "ts-node src/scripts/getMessages.ts"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.1.0",
+    "@langchain/openai": "^0.0.14",
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.0"
+  }
+}
