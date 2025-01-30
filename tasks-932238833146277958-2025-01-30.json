@@ -1,0 +1,88 @@
+{
+  "identified_tasks": [
+    {
+      "description": "Grant permissions to change Actions and Secrets in the Steve repo and add user to Anthropic team",
+      "type": "Infrastructure",
+      "evidence": [
+        "nup22337509: Can you give me permissions to change Actions and Secrets in steve repo?",
+        "nup22337509: Can you also add me to Anthropic team?",
+        "nup22337509: I just checked and still have no access to Steve repo settings nor to Anthropic team."
+      ],
+      "requirements": {
+        "role": "team",
+        "skills": [
+          "GitHub Administration"
+        ],
+        "access_level": "internal",
+        "experience_level": "intermediate"
+      },
+      "suggested_reward": {
+        "points": 50,
+        "badges": [
+          "helper"
+        ],
+        "reasoning": "This task involves managing permissions and team settings, which is crucial for project collaboration."
+      }
+    },
+    {
+      "description": "Set up Anthropic team for managing AI platform keys",
+      "type": "Infrastructure",
+      "evidence": [
+        "dan_openformat: I dont think we have an Anthropic team, the current key was just my personal account, do we need to set one up"
+      ],
+      "requirements": {
+        "role": "team",
+        "skills": [
+          "DevOps",
+          "AI Platform Management"
+        ],
+        "access_level": "internal",
+        "experience_level": "intermediate"
+      },
+      "suggested_reward": {
+        "points": 100,
+        "badges": [
+          "builder"
+        ],
+        "reasoning": "Creating a dedicated team for managing AI keys is a significant task that enhances security and efficiency."
+      }
+    },
+    {
+      "description": "Document the process of using OPEN_AI_EMBEDDINGS for Steve memory embeddings",
+      "type": "Documentation",
+      "evidence": [
+        "tinypellets: the Steve memory embeddings are using OPEN_AI_EMBEDDINGS."
+      ],
+      "requirements": {
+        "role": "member",
+        "skills": [
+          "Technical Writing",
+          "AI Knowledge"
+        ],
+        "access_level": "public",
+        "experience_level": "beginner"
+      },
+      "suggested_reward": {
+        "points": 30,
+        "badges": [
+          "teacher"
+        ],
+        "reasoning": "Documenting technical processes helps new members understand and contribute effectively."
+      }
+    }
+  ],
+  "contributions": [
+    {
+      "contributor": "tinypellets",
+      "description": "Provided guidance on document commenting and managed team communication",
+      "impact": "Improved team collaboration and knowledge sharing",
+      "suggested_reward": {
+        "points": 20,
+        "badges": [
+          "helper"
+        ],
+        "reasoning": "Facilitating communication and providing guidance are valuable for community cohesion."
+      }
+    }
+  ]
+}
