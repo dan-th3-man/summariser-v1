@@ -62,4 +62,83 @@ export interface ChatAnalysis {
     mentioned_by: string;
     type: string;
   }>;
+}
+
+interface DateRange {
+  start: Date;
+  end: Date;
+}
+
+export interface InsightChunk {
+  summary: string;
+  key_topics: Array<{
+    name: string;
+    description: string;
+    participants: string[];
+    key_points: string[];
+  }>;
+  notable_interactions: Array<{
+    type: string;
+    description: string;
+    participants: string[];
+    impact: string;
+  }>;
+  emerging_trends: string[];
+  dateRange: DateRange;
+}
+
+export interface CommunityInsight {
+  insights: InsightChunk[];
+  dateRange: DateRange;
+}
+
+export interface TaskRequirements {
+  role: "team" | "builder" | "ambassador" | "member";
+  skills: string[];
+  access_level: "internal" | "trusted" | "public";
+  experience_level: "beginner" | "intermediate" | "advanced";
+}
+
+export interface IdentifiedTask {
+  description: string;
+  type: string;
+  evidence: string[];
+  requirements: TaskRequirements;
+  suggested_reward: {
+    points: number;
+    badges?: string[];
+    monetary_value?: number;
+    reasoning: string;
+  };
+}
+
+export interface TaskAnalysis {
+  identified_tasks: IdentifiedTask[];
+  contributions: Array<{
+    contributor: string;
+    description: string;
+    impact: string;
+    suggested_reward: {
+      points: number;
+      badges?: string[];
+      reasoning: string;
+    };
+  }>;
+}
+
+export interface CommunityRules {
+  point_system: {
+    rules: string[];
+    badge_types: string[];
+    monetary_rewards: boolean;
+  };
+  existing_badges: string[];
+  reward_guidelines: {
+    min_points: number;
+    max_points: number;
+    monetary_thresholds?: {
+      min_value: number;
+      max_value: number;
+    };
+  };
 } 
