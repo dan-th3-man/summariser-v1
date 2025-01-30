@@ -4,7 +4,9 @@
     "start": "ts-node src/index.ts",
     "dev": "ts-node-dev --respawn src/index.ts",
     "analyze": "ts-node src/scripts/analyzeMessages.ts",
-    "messages": "ts-node src/scripts/getMessages.ts"
+    "messages": "ts-node src/scripts/getMessages.ts",
+    "insights": "ts-node src/scripts/generateInsights.ts",
+    "tasks": "ts-node src/scripts/analyzeTasks.ts"
   },
   "dependencies": {
     "@langchain/core": "^0.1.0",
