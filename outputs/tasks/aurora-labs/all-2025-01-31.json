@@ -1,0 +1,231 @@
+{
+  "identified_tasks": [
+    {
+      "description": "Develop a bot to detect and remove spam/scam messages automatically",
+      "type": "Feature",
+      "evidence": [
+        {
+          "message": "Majority of these guys are hackers and scammers. Nobody applies for a job by spamming discord servers",
+          "timestamp": "2025-01-30T07:41:33.838+00:00",
+          "channelName": "general-chat"
+        }
+      ],
+      "requirements": {
+        "role": "builder",
+        "skills": [
+          "Discord API",
+          "Python",
+          "JavaScript"
+        ],
+        "access_level": "trusted",
+        "experience_level": "intermediate"
+      },
+      "suggested_reward": {
+        "points": 300,
+        "badges": [
+          "builder"
+        ],
+        "monetary_value": 0,
+        "reasoning": "Creating a bot to handle spam/scam messages is a complex task that significantly improves community safety."
+      }
+    },
+    {
+      "description": "Create a FAQ document for common questions about the Aurora ecosystem",
+      "type": "Documentation",
+      "evidence": [
+        {
+          "message": "anyone familiar with burrow finance and can tell - if i borrow there eth will it appear after as eth on near chain or eth on aurora or how?",
+          "timestamp": "2025-01-30T14:34:43.089+00:00",
+          "channelName": "general-chat"
+        }
+      ],
+      "requirements": {
+        "role": "member",
+        "skills": [
+          "Technical Writing",
+          "Understanding of Aurora Ecosystem"
+        ],
+        "access_level": "public",
+        "experience_level": "beginner"
+      },
+      "suggested_reward": {
+        "points": 100,
+        "badges": [
+          "teacher"
+        ],
+        "monetary_value": 0,
+        "reasoning": "Providing clear documentation helps reduce repetitive questions and aids new users."
+      }
+    },
+    {
+      "description": "Create a detailed guide on using ETH on the Near blockchain via Aurora",
+      "type": "Documentation",
+      "evidence": [
+        {
+          "message": "wondering how that works since there is no eth token on near chain. was thinking maybe somehow via aurora",
+          "timestamp": "2025-01-30T14:45:07.879+00:00",
+          "channelName": "general-chat"
+        },
+        {
+          "message": "and what wallet to use on burrow to see eth after",
+          "timestamp": "2025-01-30T14:45:47.472+00:00",
+          "channelName": "general-chat"
+        }
+      ],
+      "requirements": {
+        "role": "builder",
+        "skills": [
+          "Blockchain",
+          "Near Protocol",
+          "Aurora"
+        ],
+        "access_level": "public",
+        "experience_level": "intermediate"
+      },
+      "suggested_reward": {
+        "points": 200,
+        "badges": [
+          "teacher"
+        ],
+        "monetary_value": 0,
+        "reasoning": "This task requires a solid understanding of blockchain technology and will provide significant value to users trying to navigate ETH on Near."
+      }
+    },
+    {
+      "description": "Develop a support system for Turbochain issues",
+      "type": "Infrastructure",
+      "evidence": [
+        {
+          "message": "I deposited into Turboswap and it's not reflected in the wallet even though it's always on chain in the explorer 0x7a1434B6d4B5Ac7898947866a5Fa6A87d6B665e0. There's no support for Turbochain",
+          "timestamp": "2025-01-30T08:59:03.17+00:00",
+          "channelName": "bridge-support"
+        }
+      ],
+      "requirements": {
+        "role": "team",
+        "skills": [
+          "DevOps",
+          "Blockchain",
+          "Support Systems"
+        ],
+        "access_level": "internal",
+        "experience_level": "advanced"
+      },
+      "suggested_reward": {
+        "points": 500,
+        "badges": [
+          "builder",
+          "innovator"
+        ],
+        "monetary_value": 0,
+        "reasoning": "Creating a support system for Turbochain is a complex task that requires deep technical expertise and will greatly enhance user experience."
+      }
+    },
+    {
+      "description": "Develop a spam detection and prevention bot for the Discord server",
+      "type": "Feature",
+      "evidence": [
+        {
+          "message": "The guy post they get una sha lol",
+          "timestamp": "2025-01-30T09:00:08.072+00:00",
+          "channelName": "#bridge-support"
+        },
+        {
+          "message": "I received the reward here, have you received it? https://is.gd/dN3JWY",
+          "timestamp": "2025-01-30T09:00:09.898+00:00",
+          "channelName": "#bridge-support"
+        }
+      ],
+      "requirements": {
+        "role": "builder",
+        "skills": [
+          "Discord API",
+          "Python",
+          "Machine Learning"
+        ],
+        "access_level": "trusted",
+        "experience_level": "advanced"
+      },
+      "suggested_reward": {
+        "points": 300,
+        "badges": [
+          "builder",
+          "innovator"
+        ],
+        "monetary_value": 0,
+        "reasoning": "Developing a bot to prevent spam is a complex task that requires advanced skills and has a high impact on maintaining the community's integrity."
+      }
+    },
+    {
+      "description": "Create a guide for reporting issues and contacting support",
+      "type": "Documentation",
+      "evidence": [
+        {
+          "message": "Contact the team ➡ discordapp.com/invite\\d4GNgxdvVq",
+          "timestamp": "2025-01-30T08:59:59.544+00:00",
+          "channelName": "#bridge-support"
+        },
+        {
+          "message": "Relay your query to the team*<https:/%20@paw.wf/InstantLiveChat!!>",
+          "timestamp": "2025-01-30T09:00:06.992+00:00",
+          "channelName": "#bridge-support"
+        }
+      ],
+      "requirements": {
+        "role": "ambassador",
+        "skills": [
+          "Technical Writing",
+          "Discord"
+        ],
+        "access_level": "public",
+        "experience_level": "intermediate"
+      },
+      "suggested_reward": {
+        "points": 100,
+        "badges": [
+          "teacher"
+        ],
+        "monetary_value": 0,
+        "reasoning": "Creating clear documentation helps streamline support processes and is valuable for all community members."
+      }
+    }
+  ],
+  "contributions": [
+    {
+      "contributor": "username",
+      "description": "Reported a potential scam link in the chat",
+      "impact": "Helped maintain community safety by alerting others to a potential scam",
+      "suggested_reward": {
+        "points": 50,
+        "badges": [
+          "helper"
+        ],
+        "reasoning": "Reporting scams is crucial for community safety and deserves recognition."
+      }
+    },
+    {
+      "contributor": "unknown",
+      "description": "Guided users on using Near wallet for ETH",
+      "impact": "Provided immediate assistance and clarity to users confused about ETH on Near",
+      "suggested_reward": {
+        "points": 50,
+        "badges": [
+          "helper"
+        ],
+        "reasoning": "The contributor provided valuable support to users, aligning with the community's point system for helpfulness."
+      }
+    },
+    {
+      "contributor": "username",
+      "description": "Reported a spam message in the support channel",
+      "impact": "Helped maintain the integrity of the community by alerting moderators to potential spam.",
+      "suggested_reward": {
+        "points": 50,
+        "badges": [
+          "helper"
+        ],
+        "reasoning": "Reporting spam is a valuable contribution that helps keep the community safe and clean."
+      }
+    }
+  ]
+}
