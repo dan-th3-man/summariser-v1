@@ -65,10 +65,6 @@ async function generateCommunityInsights(
     
     // Convert to markdown
     const markdownInsights = insightService.formatToMarkdown(insights, serverId, channelIds);
-    
-    // Output insights
-    console.log('\nCommunity Insights:\n');
-    console.log(markdownInsights.markdown);
 
     // Save to file
     const fs = require('fs');
