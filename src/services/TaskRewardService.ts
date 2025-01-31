@@ -3,6 +3,9 @@ import { HumanMessage } from "@langchain/core/messages";
 import { ChatMessage, TaskAnalysis, CommunityRules } from '../models/types';
 import { chunkMessages } from '../utils/chunks';
 import { formatMessages } from '../utils/formatters';
+import { COMMUNITY_SERVERS } from '../constants/communities';
+import { getServerAndChannelNames } from '../utils/communityHelpers';
+import { getOutputPath } from '../utils/fileHelpers';
 
 export class TaskRewardService {
   private model: ChatOpenAI;
@@ -20,9 +23,9 @@ export class TaskRewardService {
   async analyzeTasks(
     messages: ChatMessage[], 
     users: Record<string, any>,
-    existingTasks: any[]
+    existingTasks: any[] = []
   ): Promise<TaskAnalysis> {
-    const chunks = chunkMessages(messages, 100);  // Increased chunk size for better context
+    const chunks = chunkMessages(messages, 50);
     const analyses: TaskAnalysis[] = [];
     
     // Get date range for context
@@ -33,18 +36,23 @@ export class TaskRewardService {
     console.log(`Analyzing ${messages.length} messages for tasks...`);
     console.log(`Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
-    for (let i = 0; i < chunks.length; i++) {
-      console.log(`Processing chunk ${i + 1}/${chunks.length} (${chunks[i].length} messages)`);
-      const transcript = formatMessages(chunks[i], users);
-      const analysis = await this.analyzeChunk(transcript, existingTasks);
-      analyses.push(analysis);
-    }
+    for (const chunk of chunks) {
+      const transcript = formatMessages(chunk, users);
+      
+      // Get channel names from our constants
+      const messagesWithChannels = chunk.map(msg => {
+        const serverData = COMMUNITY_SERVERS[msg.server_id];
+        const channelName = serverData?.channels[msg.channel_id];
+        
+        return {
+          message: msg.content,
+          timestamp: msg.created_at,
+          channelName: channelName || msg.channel_name || msg.channel_id
+        };
+      });
 
-    return this.mergeTasks(analyses);
-  }
-
-  private async analyzeChunk(transcript: string, existingTasks: any[]): Promise<TaskAnalysis> {
-    const prompt = `Analyze this Discord chat segment and identify potential tasks and contributions that could help the community.
+      // Update the prompt to emphasize using exact channel names
+      const prompt = `Analyze this Discord chat segment and identify potential tasks and contributions that could help the community.
 
 For each task, specify:
 1. Required role:
@@ -83,7 +91,13 @@ Respond in this JSON format:
     {
       "description": "Task description",
       "type": "Feature|Documentation|Support|Infrastructure",
-      "evidence": ["Message quotes showing need/request"],
+      "evidence": [
+        {
+          "message": "Message quote",
+          "timestamp": "ISO timestamp",
+          "channelName": "channel name"
+        }
+      ],
       "requirements": {
         "role": "team|builder|ambassador|member",
         "skills": ["required skill 1", "required skill 2"],
@@ -119,27 +133,18 @@ ${this.communityRules.reward_guidelines.monetary_thresholds ?
   `- Monetary rewards: $${this.communityRules.reward_guidelines.monetary_thresholds.min_value} to $${this.communityRules.reward_guidelines.monetary_thresholds.max_value}` : 
   '- No monetary rewards available'}
 
-Chat transcript:
-${transcript}`;
+Chat transcript with channel names:
+${messagesWithChannels.map(m => `[${m.timestamp}] #${m.channelName}: ${m.message}`).join('\n')}`;
 
-    const response = await this.model.invoke([
-      new HumanMessage(prompt)
-    ]);
-
-    try {
-      let content = typeof response.content === 'string' 
+      const response = await this.model.invoke([new HumanMessage(prompt)]);
+      const content = typeof response.content === 'string' 
         ? response.content 
         : JSON.stringify(response.content);
-      
-      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      return JSON.parse(content) as TaskAnalysis;
-    } catch (e) {
-      console.error("Failed to parse analysis response:", e);
-      return {
-        identified_tasks: [],
-        contributions: []
-      };
+      const analysis = JSON.parse(content.replace(/```json\n?|```/g, '').trim());
+      analyses.push(analysis);
     }
+
+    return this.mergeTasks(analyses);
   }
 
   private mergeTasks(analyses: TaskAnalysis[]): TaskAnalysis {
@@ -170,13 +175,25 @@ ${transcript}`;
     };
   }
 
-  formatToMarkdown(analysis: TaskAnalysis, serverId: string, channelId?: string): { markdown: string, filename: string } {
+  formatToMarkdown(analysis: TaskAnalysis, serverId: string, channelIds?: string[]): { markdown: string, filename: string } {
     const formatDate = (date: Date) => date.toISOString().split('T')[0];
     const today = formatDate(new Date());
-    const filename = `tasks-${serverId}${channelId ? `-${channelId}` : ''}-${today}.md`;
+    
+    const { serverName, channelNames } = getServerAndChannelNames(serverId, channelIds);
+    
+    const channelSuffix = channelNames?.length 
+      ? `-${channelNames.map(name => name.toLowerCase().replace(/\s+/g, '-')).join('-')}` 
+      : '';
+    
+    const filename = `tasks${channelSuffix}-${today}.md`;
+    const outputPath = getOutputPath('tasks', serverName, filename);
     
     let markdown = `# Community Tasks and Contributions\n`;
-    markdown += `## Server: ${serverId}${channelId ? `\n## Channel: ${channelId}` : ''}\n\n`;
+    markdown += `## Server: ${serverName}\n`;
+    if (channelNames?.length) {
+      markdown += `## Channels: ${channelNames.join(', ')}\n`;
+    }
+    markdown += '\n';
 
     // Tasks Section
     markdown += '## Identified Tasks\n\n';
@@ -188,8 +205,8 @@ ${transcript}`;
       markdown += `- Access Level: ${task.requirements.access_level}\n`;
       markdown += `- Experience: ${task.requirements.experience_level}\n\n`;
       markdown += '#### Evidence:\n';
-      task.evidence.forEach(quote => {
-        markdown += `> ${quote}\n`;
+      task.evidence.forEach(evidence => {
+        markdown += `> [${evidence.timestamp}] #${evidence.channelName}: ${evidence.message}\n`;
       });
       markdown += '\n#### Suggested Reward:\n';
       markdown += `- Points: ${task.suggested_reward.points}\n`;
@@ -216,6 +233,7 @@ ${transcript}`;
       markdown += `- Reasoning: ${contribution.suggested_reward.reasoning}\n\n`;
     });
 
-    return { markdown, filename };
+    return { markdown, filename: outputPath };
   }
 } 
+//TODO questions that never got answered
