@@ -6,7 +6,8 @@
     "analyze": "ts-node src/scripts/analyzeMessages.ts",
     "messages": "ts-node src/scripts/getMessages.ts",
     "insights": "ts-node src/scripts/generateInsights.ts",
-    "tasks": "ts-node src/scripts/analyzeTasks.ts"
+    "tasks": "ts-node src/scripts/analyzeTasks.ts",
+    "test-reactions": "ts-node src/scripts/testReactions.ts"
   },
   "dependencies": {
     "@langchain/core": "^0.1.0",
