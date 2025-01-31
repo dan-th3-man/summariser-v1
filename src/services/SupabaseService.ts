@@ -76,52 +76,79 @@ export class SupabaseService {
   async getMessageReactions(messageIds: string[]): Promise<Record<string, any[]>> {
     console.log('Looking for reactions for message IDs:', messageIds);
 
-    // Get all reactions that have inReplyTo in their content
     const { data: reactions, error: reactionsError } = await this.client
       .from('memories')
       .select('*')
-      .eq('type', 'messages')  // All records are type 'messages'
+      .eq('type', 'messages')
       .contains('content', { source: 'discord' })
-      .neq('content->inReplyTo', null);  // Has inReplyTo in content
+      .filter('content->text', 'like', '*<_*>: "*')  // Match emoji reaction pattern
+      .neq('content->inReplyTo', null);
       
     if (reactionsError) {
       console.error('Error fetching reactions:', reactionsError);
       return {};
     }
 
-    console.log('Raw reactions found:', reactions.length);
-
     // Group reactions by message ID
     const reactionsByMessage: Record<string, any[]> = {};
-    reactions.forEach(reaction => {
-      // Check if it's an emoji reaction by looking for the pattern "*<emoji>: \"*"
-      if (reaction.content?.text?.startsWith('*<') && 
-          reaction.content?.text?.includes('>: "') && 
-          reaction.content.inReplyTo && 
-          messageIds.includes(reaction.content.inReplyTo)) {
-        
+    
+    reactions?.forEach(reaction => {
+      // Only process if it matches the emoji reaction pattern *<emoji>: "message"*
+      const emojiMatch = reaction.content?.text?.match(/^\*<([^>]+)>: ".*"\*$/);
+      if (emojiMatch && reaction.content?.inReplyTo && messageIds.includes(reaction.content.inReplyTo)) {
         const messageId = reaction.content.inReplyTo;
+        const emoji = emojiMatch[1];
+        
         if (!reactionsByMessage[messageId]) {
           reactionsByMessage[messageId] = [];
         }
         
-        // Extract emoji from "*<emoji>: \"text\"*" pattern
-        const emojiMatch = reaction.content.text.match(/\*<(.+?)>:/);
-        if (emojiMatch) {
-          reactionsByMessage[messageId].push({
-            emoji: emojiMatch[1],
-            url: reaction.content.url
-          });
-        }
+        reactionsByMessage[messageId].push({
+          emoji,
+          url: reaction.content.url
+        });
       }
     });
 
-    console.log(`Found ${reactions.length} total reactions`);
+    // Debug logging
+    console.log(`Found ${reactions?.length || 0} total reactions`);
     console.log(`Matched ${Object.keys(reactionsByMessage).length} messages with reactions`);
-    Object.entries(reactionsByMessage).forEach(([messageId, reactions]) => {
-      console.log(`Message ${messageId}: ${reactions.length} reactions`);
+    Object.entries(reactionsByMessage).forEach(([msgId, reactions]) => {
+      console.log(`Message ${msgId}: ${reactions.length} reactions:`, 
+        reactions.map(r => r.emoji).join(', '));
     });
     
     return reactionsByMessage;
+  }
+
+  async debugReactions(serverId: string, channelId?: string): Promise<void> {
+    // First get all memories that look like reactions
+    const { data: possibleReactions, error } = await this.client
+      .from('memories')
+      .select('*')
+      .eq('type', 'messages')
+      .contains('content', { source: 'discord' })
+      .filter('content->>text', 'ilike', '*<_*>: "*')  // Changed to ilike and content->>text
+      .limit(10);
+
+    if (error) {
+      console.error('Error fetching reactions:', error);
+      return;
+    }
+
+    // Filter for actual emoji reactions
+    const emojiReactions = possibleReactions?.filter(r => 
+      r.content?.text?.match(/^\*<[^>]+>: ".*"\*$/) && 
+      r.content?.inReplyTo
+    ) || [];
+
+    console.log('Found emoji reactions:', emojiReactions.length);
+    if (emojiReactions.length > 0) {
+      console.log('Emoji reactions:', emojiReactions.map(r => ({
+        emoji: r.content.text.match(/^\*<([^>]+)>:/)?.[1],
+        inReplyTo: r.content.inReplyTo,
+        fullText: r.content.text
+      })));
+    }
   }
 } 
