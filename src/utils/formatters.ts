@@ -1,4 +1,4 @@
-import { ChatMessage } from '../models/types';
+import { ChatMessage } from '../types/chat';
 
 export function formatMessages(messages: ChatMessage[], users: Record<string, any>): string {
   return messages.map(msg => {

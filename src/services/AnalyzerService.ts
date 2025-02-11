@@ -1,6 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage } from "@langchain/core/messages";
-import { ChatMessage, ChatAnalysis } from '../models/types';
+import { ChatMessage, ChatAnalysis } from '../types/chat';
 import { chunkMessages } from '../utils/chunks';
 import { formatMessages } from '../utils/formatters';
 import { SupabaseService } from './SupabaseService';

@@ -1,29 +1,36 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage } from "@langchain/core/messages";
-import { ChatMessage, TaskAnalysis, CommunityRules } from '../models/types';
 import { chunkMessages } from '../utils/chunks';
 import { formatMessages } from '../utils/formatters';
 import { COMMUNITY_SERVERS } from '../constants/communities';
 import { getServerAndChannelNames } from '../utils/communityHelpers';
 import { getOutputPath } from '../utils/fileHelpers';
+import { 
+  TaskAnalysis, 
+  RewardGuidelines,
+  IdentifiedTask 
+} from '../types/task';
+import { ChatMessage } from '../types/chat';
 
 export class TaskRewardService {
   private model: ChatOpenAI;
-  private communityRules: CommunityRules;
+  private rewardGuidelines: RewardGuidelines;
+  private availableBadges: string[];
 
-  constructor(communityRules: CommunityRules) {
+  constructor(rewardGuidelines: RewardGuidelines, availableBadges: string[]) {
     this.model = new ChatOpenAI({
       modelName: "gpt-4o",
       temperature: 0.2,
       maxTokens: 2000,
     });
-    this.communityRules = communityRules;
+    this.rewardGuidelines = rewardGuidelines;
+    this.availableBadges = availableBadges;
   }
 
   async analyzeTasks(
     messages: ChatMessage[], 
     users: Record<string, any>,
-    existingTasks: any[] = []
+    existingTasks: IdentifiedTask[] = []
   ): Promise<TaskAnalysis> {
     const chunks = chunkMessages(messages, 50);
     const analyses: TaskAnalysis[] = [];
@@ -51,7 +58,7 @@ export class TaskRewardService {
         };
       });
 
-      // Update the prompt to emphasize using exact channel names
+      // Update the prompt to use rewardGuidelines directly
       const prompt = `Analyze this Discord chat segment and identify potential tasks and contributions that could help the community.
 
 For each task, specify:
@@ -71,7 +78,6 @@ For each task, specify:
    - advanced: Expert in relevant technologies
 
 Community Context:
-${JSON.stringify(this.communityRules, null, 2)}
 
 Existing Tasks:
 ${JSON.stringify(existingTasks, null, 2)}
@@ -127,10 +133,10 @@ Respond in this JSON format:
 }
 
 Reward Guidelines:
-- Points: Scale from ${this.communityRules.reward_guidelines.min_points} to ${this.communityRules.reward_guidelines.max_points}
-- Badges: Use from available list: ${this.communityRules.existing_badges.join(', ')}
-${this.communityRules.reward_guidelines.monetary_thresholds ? 
-  `- Monetary rewards: $${this.communityRules.reward_guidelines.monetary_thresholds.min_value} to $${this.communityRules.reward_guidelines.monetary_thresholds.max_value}` : 
+- Points: Scale from ${this.rewardGuidelines.min_points} to ${this.rewardGuidelines.max_points}
+- Badges: Use from available list: ${this.availableBadges.join(', ')}
+${this.rewardGuidelines.monetary_thresholds ? 
+  `- Monetary rewards: $${this.rewardGuidelines.monetary_thresholds.min_value} to $${this.rewardGuidelines.monetary_thresholds.max_value}` : 
   '- No monetary rewards available'}
 
 Chat transcript with channel names:

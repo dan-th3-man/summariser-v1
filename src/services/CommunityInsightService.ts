@@ -1,12 +1,12 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage } from "@langchain/core/messages";
-import { ChatMessage, CommunityInsight, InsightChunk } from '../models/types';
+import { CommunityInsight, InsightChunk } from '../types/insight';
+import { ChatMessage } from '../types/chat';
 import { chunkMessages } from '../utils/chunks';
 import { formatMessages } from '../utils/formatters';
 import { SupabaseService } from './SupabaseService';
 import { getServerAndChannelNames } from '../utils/communityHelpers';
 import { getOutputPath } from '../utils/fileHelpers';
-import { COMMUNITY_SERVERS } from '../constants/communities';
 
 export class CommunityInsightService {
   private model: ChatOpenAI;
