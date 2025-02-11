@@ -45,7 +45,7 @@ interface CommunityTokensResponse {
 
 interface GraphQLResponse {
   data: {
-    apps: Array<{
+    apps?: Array<{
       badges: Badge[];
       tokens: Array<{
         token: {
@@ -54,7 +54,27 @@ interface GraphQLResponse {
         }
       }>;
     }>;
+    rewards?: BadgeReward[];
   };
+}
+
+interface BadgeReward {
+  rewardId: string;
+  userId: string;
+  badgeName: string;
+  name: string;
+  description: string;
+}
+
+interface BadgeRewardResponse {
+  rewards: BadgeReward[];
+}
+
+interface TokenReward {
+  rewardId: string;
+  userId: string;
+  tokenName: string;
+  tokenAmount: string;
 }
 
 const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/82634/open-format-arbitrum-sepolia/v0.1.1";
@@ -97,7 +117,7 @@ export async function getCommunityTokens(communityId: string): Promise<Community
     }
 
     const data = await response.json() as GraphQLResponse;
-    const app = data.data?.apps[0];
+    const app = data.data?.apps?.[0];
     
     if (!app) {
       return {
@@ -160,3 +180,169 @@ export async function getMetadata(ipfsHash: string) {
   
     return metadata;
   }
+
+export async function getRecentBadgeRewards(communityId: string): Promise<BadgeReward[]> {
+  try {
+    const query = `
+      query getRecentBadgeRewards {
+        rewards(
+          orderBy: createdAt, 
+          orderDirection: desc, 
+          first: 10, 
+          where: {
+            app: "${communityId}",
+            badge_not: null
+          }
+        ) {
+          rewardId
+          user {
+            id
+          }
+          metadataURI
+          badge {
+            name
+          }
+        }
+      }
+    `;
+
+    console.log('Querying subgraph with:', {
+      url: SUBGRAPH_URL,
+      communityId,
+      query
+    });
+
+    const response = await fetch(SUBGRAPH_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ query })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json() as GraphQLResponse;
+    console.log('Raw GraphQL Response:', JSON.stringify(data, null, 2));
+
+    if (!data.data) {
+      throw new Error(`Invalid GraphQL response: ${JSON.stringify(data)}`);
+    }
+
+    const rewards = data.data.rewards || [];
+    
+    // Fetch metadata for each reward and flatten the structure
+    const rewardsWithMetadata = await Promise.all(
+      rewards.map(async (reward: any) => {
+        try {
+          console.log('Fetching metadata for URI:', reward.metadataURI);
+          const metadata = await getMetadata(reward.metadataURI);
+          console.log('Fetched metadata:', metadata);
+          
+          return {
+            rewardId: reward.rewardId,
+            userId: reward.user.id,
+            badgeName: reward.badge.name,
+            ...metadata  // Spread all metadata key-value pairs into the object
+          };
+        } catch (error) {
+          console.error(`Error fetching metadata for reward ${reward.rewardId}:`, error);
+          return {
+            rewardId: reward.rewardId,
+            userId: reward.user.id,
+            badgeName: reward.badge.name
+          };
+        }
+      })
+    );
+
+    return rewardsWithMetadata;
+
+  } catch (error) {
+    console.error('Error fetching recent badge rewards:', error);
+    throw error;
+  }
+}
+
+export async function getRecentTokenRewards(communityId: string): Promise<TokenReward[]> {
+  try {
+    const query = `
+      query getRecentTokenRewards {
+        rewards(
+          orderBy: createdAt, 
+          orderDirection: desc, 
+          first: 10, 
+          where: {
+            app: "${communityId}",
+            token_not: null
+          }
+        ) {
+          rewardId
+          user {
+            id
+          }
+          metadataURI
+          token {
+            name
+          }
+          tokenAmount
+        }
+      }
+    `;
+
+    const response = await fetch(SUBGRAPH_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ query })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json() as GraphQLResponse;
+
+    if (!data.data) {
+      throw new Error(`Invalid GraphQL response: ${JSON.stringify(data)}`);
+    }
+
+    const rewards = data.data.rewards || [];
+    
+    // Fetch metadata for each reward and flatten the structure
+    const rewardsWithMetadata = await Promise.all(
+      rewards.map(async (reward: any) => {
+        try {
+          const metadata = await getMetadata(reward.metadataURI);
+          
+          return {
+            rewardId: reward.rewardId,
+            userId: reward.user.id,
+            tokenName: reward.token.name,
+            tokenAmount: (Number(reward.tokenAmount) / 1e18).toString(), // Convert Wei to Ether
+            ...metadata
+          };
+        } catch (error) {
+          console.error(`Error fetching metadata for reward ${reward.rewardId}:`, error);
+          return {
+            rewardId: reward.rewardId,
+            userId: reward.user.id,
+            tokenName: reward.token.name,
+            tokenAmount: (Number(reward.tokenAmount) / 1e18).toString() // Convert Wei to Ether
+          };
+        }
+      })
+    );
+
+    return rewardsWithMetadata;
+
+  } catch (error) {
+    console.error('Error fetching recent token rewards:', error);
+    throw error;
+  }
+}
