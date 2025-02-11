@@ -17,6 +17,7 @@
     "@langchain/core": "^0.3.37",
     "@langchain/anthropic": "^0.3.12",
     "@supabase/supabase-js": "^2.39.0",
+    "@thirdweb-dev/storage": "^2.0.15",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {

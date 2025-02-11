@@ -1,4 +1,16 @@
-import { type Chain } from "../constants/chains";
+import { ThirdwebStorage } from "@thirdweb-dev/storage";
+import 'dotenv/config';
+
+const THIRDWEB_SECRET = process.env.THIRDWEB_SECRET;
+if (!THIRDWEB_SECRET) {
+  throw new Error("THIRDWEB_SECRET environment variable is not set");
+}
+
+console.log("ThirdWeb Secret available:", !!THIRDWEB_SECRET);
+
+const storage = new ThirdwebStorage({
+  secretKey: THIRDWEB_SECRET, // Use the verified secret
+});
 
 interface TokenListProps {
     tokens: Token[];
@@ -17,7 +29,7 @@ interface Token {
 interface Badge {
   id: string;
   name: string;
-  metadataURI: string;
+  description: string;
   totalAwarded: string;
 }
 
@@ -70,7 +82,10 @@ export async function getCommunityTokens(communityId: string): Promise<Community
 
     const response = await fetch(SUBGRAPH_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({
         query,
         variables: { communityAddress: communityId }
@@ -82,13 +97,7 @@ export async function getCommunityTokens(communityId: string): Promise<Community
     }
 
     const data = await response.json() as GraphQLResponse;
-    console.log('Raw GraphQL Response:', JSON.stringify(data, null, 2));  // Debug log
-
-    if (!data.data) {
-      throw new Error(`Invalid GraphQL response: ${JSON.stringify(data)}`);
-    }
-
-    const app = data.data.apps[0];
+    const app = data.data?.apps[0];
     
     if (!app) {
       return {
@@ -97,9 +106,31 @@ export async function getCommunityTokens(communityId: string): Promise<Community
       };
     }
 
+    const badgesWithMetadata = await Promise.all(
+      app.badges.map(async (badge: any) => {
+        try {
+          const metadata = await getMetadata(badge.metadataURI);
+          return {
+            id: badge.id,
+            name: metadata.name,
+            description: metadata.description,
+            totalAwarded: badge.totalAwarded
+          };
+        } catch (error) {
+          console.error(`Error fetching metadata for badge ${badge.id}:`, error);
+          return {
+            id: badge.id,
+            name: badge.name,
+            description: '',
+            totalAwarded: badge.totalAwarded
+          };
+        }
+      })
+    );
+
     return {
-      badges: app.badges || [],
-      tokens: (app.tokens || []).map((t: any) => ({
+      badges: badgesWithMetadata,
+      tokens: app.tokens.map((t: any) => ({
         id: t.token.id,
         name: t.token.name
       }))
@@ -118,3 +149,14 @@ export function getTokenType(tokenType: 'Base' | 'Point'): string {
   };
   return tokenTypes[tokenType];
 } 
+
+export async function getMetadata(ipfsHash: string) {
+    const metadata = await storage.downloadJSON(ipfsHash);
+  
+    if (metadata.image) {
+      const image = await storage.download(metadata.image);
+      metadata.image = image.url;
+    }
+  
+    return metadata;
+  }
