@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { SupabaseService } from '../services/SupabaseService';
 import { TaskRewardService } from '../services/TaskRewardService';
-import { CommunityRules, DEFAULT_COMMUNITY_RULES } from '../models/CommunityRules';
+import { CommunityRules, DEFAULT_COMMUNITY_RULES } from '../models/CommunityProfile';
 import { getServerIdByName, getChannelIdsByName } from '../utils/communityHelpers';
 
 // Use defaults or merge with custom settings

@@ -25,22 +25,9 @@ export interface CommunityProfile {
   }>;
 
   // Community engagement system
-  point_system: {
-    rules: string[];
-    monetary_rewards: boolean;
-  };
-  
-  badges: Badge[];
-  tokens: SimpleToken[];
-  
-  reward_guidelines: {
-    min_points: number;
-    max_points: number;
-    monetary_thresholds?: {
-      min_value: number;
-      max_value: number;
-      currency?: string;
-    };
+  current_available_rewards: {
+    badges: Badge[];
+    tokens: SimpleToken[];
   };
 
   // Role definitions
@@ -115,20 +102,9 @@ export const DEFAULT_COMMUNITY_PROFILE: CommunityProfile = {
     status: 'active'
   }],
 
-  badges: [],
-  tokens: [],
-  point_system: {
-    rules: [
-      "Points are awarded for valuable contributions",
-      "Larger tasks receive more points",
-      "Technical contributions are highly valued"
-    ],
-    monetary_rewards: false
-  },
-  
-  reward_guidelines: {
-    min_points: 10,
-    max_points: 500
+  current_available_rewards: {
+    badges: [],
+    tokens: [],
   },
 
   communication_channels: [{
