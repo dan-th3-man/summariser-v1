@@ -7,16 +7,25 @@
     "messages": "ts-node src/scripts/getMessages.ts",
     "insights": "ts-node src/scripts/generateInsights.ts",
     "tasks": "ts-node src/scripts/analyzeTasks.ts",
-    "test-reactions": "ts-node src/scripts/testReactions.ts"
+    "clean": "rm -rf dist",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write \"src/**/*.ts\""
   },
   "dependencies": {
-    "@langchain/core": "^0.1.0",
-    "@langchain/openai": "^0.0.14",
+    "@langchain/openai": "^0.4.2",
+    "@langchain/core": "^0.3.37",
+    "@langchain/anthropic": "^0.3.12",
     "@supabase/supabase-js": "^2.39.0",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "rimraf": "^5.0.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.0.0"
