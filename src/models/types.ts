@@ -103,6 +103,7 @@ export interface InsightChunk {
 export interface CommunityInsight {
   insights: InsightChunk[];
   dateRange: DateRange;
+  topReactedMessages?: TopReaction[];
 }
 
 export interface TaskRequirements {

@@ -6,6 +6,7 @@ import { formatMessages } from '../utils/formatters';
 import { SupabaseService } from './SupabaseService';
 import { getServerAndChannelNames } from '../utils/communityHelpers';
 import { getOutputPath } from '../utils/fileHelpers';
+import { COMMUNITY_SERVERS } from '../constants/communities';
 
 export class CommunityInsightService {
   private model: ChatOpenAI;
@@ -24,20 +25,22 @@ export class CommunityInsightService {
     const chunks = chunkMessages(messages, 200);
     const insights: InsightChunk[] = [];
     
+    /* Commenting out reactions logic for now
     // Get reactions for all messages
     const messageIds = messages.map(m => m.id);
     const reactions = await this.supabase.getMessageReactions(messageIds);
     
     // Sort messages by reaction count
-    const topMessages = messages
+    const topReactedMessages = messages
       .filter(m => reactions[m.id]?.length > 0)
       .sort((a, b) => (reactions[b.id]?.length || 0) - (reactions[a.id]?.length || 0))
       .slice(0, 5)
       .map(m => ({
-        messageContent: m.content,
+        messageContent: typeof m.content === 'object' ? (m.content as any).text : m.content,
         reactions: this.groupReactions(reactions[m.id]),
         url: reactions[m.id][0]?.url || ''
       }));
+    */
 
     // Get date range from messages
     const dates = messages.map(m => new Date(m.created_at));
@@ -63,9 +66,9 @@ export class CommunityInsightService {
     }
 
     // Add top reactions to each chunk
-    insights.forEach(chunk => {
-      chunk.top_reactions = topMessages;
-    });
+    // insights.forEach(chunk => {
+    //   chunk.top_reactions = topReactedMessages;
+    // });
 
     return {
       insights,
@@ -73,6 +76,7 @@ export class CommunityInsightService {
         start: startDate,
         end: endDate
       }
+      // topReactedMessages: [] // Commented out for now
     };
   }
 
