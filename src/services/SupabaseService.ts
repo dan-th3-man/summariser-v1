@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { ChatMessage } from '../models/types';
+import { ChatMessage } from '../types/chat';
 
 export class SupabaseService {
   private client: SupabaseClient;
