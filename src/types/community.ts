@@ -11,14 +11,14 @@ export interface CommunityProfile {
   goals: string[];
   
   // Community focus areas and target participants
-  target_participants: Array<{
+  target_participants?: Array<{
     role: string;            // e.g., "developer", "designer", "ambassador"
     skills_needed: string[]; // e.g., ["React", "TypeScript"] or ["UI/UX", "Figma"]
     experience_level: string;// e.g., "Beginner-friendly" or "3+ years experience"
   }>;
 
   // Active initiatives
-  current_campaigns: Array<{
+  current_campaigns?: Array<{
     name: string;
     description: string;
     start_date: string;
@@ -44,31 +44,28 @@ export interface CommunityProfile {
   };
   
   reward_guidelines: {
-    min_points: number;
-    max_points: number;
-    monetary_thresholds?: {
-      min_value: number;
-      max_value: number;
-      currency?: string;
-    };
+    reward_worthy_contributions: string[];
+    contribution_examples: string[];
   };
 
   // Role definitions
   roles?: {
     team?: RoleDefinition;
     builder?: RoleDefinition;
+    artist?: RoleDefinition;
+    fan?: RoleDefinition;
     ambassador?: RoleDefinition;
     member?: RoleDefinition;
   };
   
   // Additional community information
-  communication_channels: {
-    type: string;      // e.g., "Discord", "Slack", "Forum"
-    url: string;
-    primary: boolean;
-  }[];
+  communication_channels?: {
+    discord?: string;
+    telegram?: string;
+    forum?: string;
+  };
   
-  resources: {
+  resources?: {
     documentation?: string;
     getting_started?: string;
     contribution_guidelines?: string;
