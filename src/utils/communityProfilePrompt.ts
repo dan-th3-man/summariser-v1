@@ -1,6 +1,6 @@
 import { CommunityProfile } from '../types/community';
 import { getCommunityTokens, getRecentBadgeRewards, getRecentTokenRewards } from './tokenUtils';
-import { formatAvailableRewards, formatRecentRewards } from './communityRewardFormatters';
+import { formatAvailableRewards, formatRecentRewards } from './communityHelpers';
 
 export async function generateCommunityContextPrompt(profile: CommunityProfile): Promise<string> {
   let prompt = `Community Context for ${profile.name}\n\n`;
@@ -38,23 +38,27 @@ export async function generateCommunityContextPrompt(profile: CommunityProfile):
 
     // Fetch and format blockchain rewards data
     try {
+      console.log('Fetching blockchain rewards data...');
       const [communityTokens, recentBadgeRewards, recentTokenRewards] = await Promise.all([
         getCommunityTokens(profile.communityId),
         getRecentBadgeRewards(profile.communityId),
         getRecentTokenRewards(profile.communityId)
       ]);
 
-    // Format and add available rewards
-    prompt += formatAvailableRewards(
-      communityTokens.badges,
-      communityTokens.tokens
-    );
+    // Only add blockchain data if we actually got results
+    if (communityTokens?.badges?.length || communityTokens?.tokens?.length) {
+      prompt += formatAvailableRewards(
+        communityTokens.badges || [],
+        communityTokens.tokens || []
+      );
+    }
 
-    // Format and add recent rewards
-    prompt += formatRecentRewards(
-      recentBadgeRewards,
-      recentTokenRewards
-    );
+    if (recentBadgeRewards?.length || recentTokenRewards?.length) {
+      prompt += formatRecentRewards(
+        recentBadgeRewards || [],
+        recentTokenRewards || []
+      );
+    }
 
   } catch (error) {
     console.error('Error fetching blockchain rewards data:', error);
