@@ -1,4 +1,5 @@
 import { COMMUNITY_SERVERS } from '../constants/communities';
+import { Badge, SimpleToken, BadgeReward, TokenReward } from '../types/token';
 
 export function getServerIdByName(nameOrId: string): string | null {
   // If it's already an ID in our constants, return it
@@ -44,4 +45,56 @@ export function getServerAndChannelNames(serverId: string, channelIds?: string[]
     serverName: server.name,
     channelNames
   };
+} 
+
+export function formatAvailableRewards(badges: Badge[], tokens: SimpleToken[]): string {
+  let prompt = `### Available Rewards - Use these to inform what rewards are currently able to be rewarded\n`;
+  
+  if (badges.length) {
+    prompt += `\n#### Available Badges:\n`;
+    badges.forEach(badge => {
+      prompt += `- ${badge.name}: ${badge.description} (Awarded ${badge.totalAwarded} times)\n`;
+    });
+  }
+  
+  if (tokens.length) {
+    prompt += `\n#### Available Tokens:\n`;
+    tokens.forEach(token => {
+      prompt += `- ${token.name}\n`;
+    });
+  }
+  
+  return prompt + '\n';
+}
+
+export function formatRecentRewards(badgeRewards: any[], tokenRewards: any[]): string {
+  let output = '### Recent Rewards\n\n';
+  
+  output += '#### Recent Badge Awards:\n';
+  badgeRewards.forEach(reward => {
+    output += `- The ${reward.badgeName} badge was awarded to ${reward.userId}\n`;
+    output += `  Reward ID: ${reward.rewardId}\n`;
+    output += `  Metadata:\n`;
+    Object.entries(reward).forEach(([key, value]) => {
+      if (!['rewardId', 'userId', 'badgeName'].includes(key)) {
+        output += `    - ${key}: ${value}\n`;
+      }
+    });
+    output += '\n';
+  });
+  
+  output += '#### Recent Token Awards:\n';
+  tokenRewards.forEach(reward => {
+    output += `- ${reward.tokenAmount} ${reward.tokenName} tokens awarded to ${reward.userId}\n`;
+    output += `  Reason: ${reward.rewardId || 'No reason provided'}\n`;
+    output += `  Metadata:\n`;
+    Object.entries(reward).forEach(([key, value]) => {
+      if (!['rewardId', 'userId', 'tokenName'].includes(key)) {
+        output += `    - ${key}: ${value}\n`;
+      }
+    });
+    output += '\n';
+  });
+  
+  return output;
 } 
