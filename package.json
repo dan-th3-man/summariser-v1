@@ -7,6 +7,7 @@
     "messages": "ts-node src/scripts/getMessages.ts",
     "insights": "ts-node src/scripts/generateInsights.ts",
     "tasks": "ts-node src/scripts/analyzeTasks.ts",
+    "rewards": "ts-node src/scripts/analyzeRewards.ts",
     "clean": "rm -rf dist",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
