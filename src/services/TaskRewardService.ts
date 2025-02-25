@@ -21,7 +21,7 @@ export class TaskRewardService {
     this.model = new ChatOpenAI({
       modelName: "gpt-4o",
       temperature: 0.2,
-      maxTokens: 2000,
+      maxTokens: 4000,  // Increased for consolidation
     });
     this.rewardGuidelines = rewardGuidelines;
     this.availableBadges = availableBadges;
@@ -32,7 +32,7 @@ export class TaskRewardService {
     users: Record<string, any>,
     existingTasks: IdentifiedTask[] = []
   ): Promise<TaskAnalysis> {
-    const chunks = chunkMessages(messages, 50);
+    const chunks = chunkMessages(messages, 300);
     const analyses: TaskAnalysis[] = [];
     
     // Get date range for context
@@ -150,7 +150,48 @@ ${messagesWithChannels.map(m => `[${m.timestamp}] #${m.channelName}: ${m.message
       analyses.push(analysis);
     }
 
-    return this.mergeTasks(analyses);
+    // If we have multiple chunks, consolidate them
+    if (chunks.length > 1) {
+      return await this.consolidateTaskAnalyses(analyses);
+    }
+
+    return analyses[0];
+  }
+
+  private async consolidateTaskAnalyses(analyses: TaskAnalysis[]): Promise<TaskAnalysis> {
+    const analysesJson = JSON.stringify(analyses, null, 2);
+    
+    const prompt = `You are analyzing multiple chunks of community task analyses and need to consolidate them into a single coherent summary.
+    
+Review these separate analysis chunks and create a unified summary that:
+1. Combines similar tasks and removes duplicates
+2. Merges evidence from related tasks
+3. Consolidates contribution records for the same contributors
+4. Ensures reward suggestions are consistent across similar tasks
+5. Maintains the most detailed requirements and evidence
+
+Previous analyses:
+${analysesJson}
+
+Respond in the same JSON format as the input chunks, but provide a consolidated view that:
+- Combines similar tasks with merged evidence
+- Aggregates contributions from the same users
+- Maintains consistent reward levels for similar work
+- Preserves all relevant evidence and context`;
+
+    const response = await this.model.invoke([new HumanMessage(prompt)]);
+    
+    try {
+      const content = typeof response.content === 'string' 
+        ? response.content 
+        : JSON.stringify(response.content);
+      
+      return JSON.parse(content.replace(/```json\n?|```/g, '').trim());
+    } catch (e) {
+      console.error("Failed to consolidate task analyses:", e);
+      // Return merged tasks using simple method as fallback
+      return this.mergeTasks(analyses);
+    }
   }
 
   private mergeTasks(analyses: TaskAnalysis[]): TaskAnalysis {
@@ -181,11 +222,21 @@ ${messagesWithChannels.map(m => `[${m.timestamp}] #${m.channelName}: ${m.message
     };
   }
 
-  formatToMarkdown(analysis: TaskAnalysis, serverId: string, channelIds?: string[]): { markdown: string, filename: string } {
+  formatToMarkdown(analysis: TaskAnalysis, serverNameOrId: string, channelIds?: string[]): { markdown: string, filename: string } {
     const formatDate = (date: Date) => date.toISOString().split('T')[0];
     const today = formatDate(new Date());
     
-    const { serverName, channelNames } = getServerAndChannelNames(serverId, channelIds);
+    // Try to get server name from constants, fallback to ID if not found
+    const serverData = COMMUNITY_SERVERS[serverNameOrId];
+    const serverName = serverData?.name || serverNameOrId;
+    
+    let channelNames: string[] | undefined;
+    if (channelIds) {
+      channelNames = channelIds.map(channelId => {
+        const channelName = serverData?.channels[channelId];
+        return channelName || channelId;
+      });
+    }
     
     const channelSuffix = channelNames?.length 
       ? `-${channelNames.map(name => name.toLowerCase().replace(/\s+/g, '-')).join('-')}` 
@@ -201,43 +252,49 @@ ${messagesWithChannels.map(m => `[${m.timestamp}] #${m.channelName}: ${m.message
     }
     markdown += '\n';
 
-    // Tasks Section
-    markdown += '## Identified Tasks\n\n';
-    analysis.identified_tasks.forEach(task => {
-      markdown += `### ${task.type}: ${task.description}\n`;
-      markdown += '#### Requirements:\n';
-      markdown += `- Role: ${task.requirements.role}\n`;
-      markdown += `- Skills: ${task.requirements.skills.join(', ')}\n`;
-      markdown += `- Access Level: ${task.requirements.access_level}\n`;
-      markdown += `- Experience: ${task.requirements.experience_level}\n\n`;
-      markdown += '#### Evidence:\n';
-      task.evidence.forEach(evidence => {
-        markdown += `> [${evidence.timestamp}] #${evidence.channelName}: ${evidence.message}\n`;
+    // Add null check for identified_tasks
+    if (analysis?.identified_tasks?.length) {
+      markdown += '## Identified Tasks\n\n';
+      analysis.identified_tasks.forEach(task => {
+        markdown += `### ${task.type}: ${task.description}\n`;
+        markdown += '#### Requirements:\n';
+        markdown += `- Role: ${task.requirements.role}\n`;
+        markdown += `- Skills: ${task.requirements.skills.join(', ')}\n`;
+        markdown += `- Access Level: ${task.requirements.access_level}\n`;
+        markdown += `- Experience: ${task.requirements.experience_level}\n\n`;
+        markdown += '#### Evidence:\n';
+        task.evidence.forEach(evidence => {
+          markdown += `> [${evidence.timestamp}] #${evidence.channelName}: ${evidence.message}\n`;
+        });
+        markdown += '\n#### Suggested Reward:\n';
+        markdown += `- Points: ${task.suggested_reward.points}\n`;
+        if (task.suggested_reward.badges?.length) {
+          markdown += `- Badges: ${task.suggested_reward.badges.join(', ')}\n`;
+        }
+        if (task.suggested_reward.monetary_value) {
+          markdown += `- Monetary Value: $${task.suggested_reward.monetary_value}\n`;
+        }
+        markdown += `- Reasoning: ${task.suggested_reward.reasoning}\n\n`;
       });
-      markdown += '\n#### Suggested Reward:\n';
-      markdown += `- Points: ${task.suggested_reward.points}\n`;
-      if (task.suggested_reward.badges?.length) {
-        markdown += `- Badges: ${task.suggested_reward.badges.join(', ')}\n`;
-      }
-      if (task.suggested_reward.monetary_value) {
-        markdown += `- Monetary Value: $${task.suggested_reward.monetary_value}\n`;
-      }
-      markdown += `- Reasoning: ${task.suggested_reward.reasoning}\n\n`;
-    });
+    } else {
+      markdown += '## No Tasks Identified\n\n';
+    }
 
-    // Contributions Section
-    markdown += '## Notable Contributions\n\n';
-    analysis.contributions.forEach(contribution => {
-      markdown += `### Contribution by ${contribution.contributor}\n`;
-      markdown += `- Description: ${contribution.description}\n`;
-      markdown += `- Impact: ${contribution.impact}\n`;
-      markdown += '#### Suggested Reward:\n';
-      markdown += `- Points: ${contribution.suggested_reward.points}\n`;
-      if (contribution.suggested_reward.badges?.length) {
-        markdown += `- Badges: ${contribution.suggested_reward.badges.join(', ')}\n`;
-      }
-      markdown += `- Reasoning: ${contribution.suggested_reward.reasoning}\n\n`;
-    });
+    // Add null check for contributions
+    if (analysis?.contributions?.length) {
+      markdown += '## Notable Contributions\n\n';
+      analysis.contributions.forEach(contribution => {
+        markdown += `### Contribution by ${contribution.contributor}\n`;
+        markdown += `- Description: ${contribution.description}\n`;
+        markdown += `- Impact: ${contribution.impact}\n`;
+        markdown += '#### Suggested Reward:\n';
+        markdown += `- Points: ${contribution.suggested_reward.points}\n`;
+        if (contribution.suggested_reward.badges?.length) {
+          markdown += `- Badges: ${contribution.suggested_reward.badges.join(', ')}\n`;
+        }
+        markdown += `- Reasoning: ${contribution.suggested_reward.reasoning}\n\n`;
+      });
+    }
 
     return { markdown, filename: outputPath };
   }

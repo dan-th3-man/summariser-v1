@@ -7,6 +7,7 @@ import { formatMessages } from '../utils/formatters';
 import { SupabaseService } from './SupabaseService';
 import { getServerAndChannelNames } from '../utils/communityHelpers';
 import { getOutputPath } from '../utils/fileHelpers';
+import { COMMUNITY_SERVERS } from "../constants/communities";
 
 export class CommunityInsightService {
   private model: ChatOpenAI;
@@ -16,13 +17,13 @@ export class CommunityInsightService {
     this.model = new ChatOpenAI({
       modelName: "gpt-4o",
       temperature: 0.2,
-      maxTokens: 2000,  // Increased for larger chunks
+      maxTokens: 4000,  // Increased for consolidation
     });
     this.supabase = new SupabaseService();
   }
 
   async generateInsights(messages: ChatMessage[], users: Record<string, any>): Promise<CommunityInsight> {
-    const chunks = chunkMessages(messages, 200);
+    const chunks = chunkMessages(messages, 300);
     const insights: InsightChunk[] = [];
     
     /* Commenting out reactions logic for now
@@ -56,7 +57,21 @@ export class CommunityInsightService {
       const chunkStart = new Date(Math.min(...chunkDates.map(d => d.getTime())));
       const chunkEnd = new Date(Math.max(...chunkDates.map(d => d.getTime())));
       
-      const transcript = formatMessages(chunks[i], users);
+      const messagesWithChannels = chunks[i].map(msg => {
+        const user = users[msg.user_id];
+        const username = user?.username || user?.display_name || 'unknown';
+        const serverData = COMMUNITY_SERVERS[msg.server_id];
+        const channelName = serverData?.channels[msg.channel_id];
+        
+        return {
+          message: msg.content,
+          timestamp: msg.created_at,
+          username: username,
+          channelName: channelName || msg.channel_name || msg.channel_id
+        };
+      });
+
+      const transcript = formatMessages(messagesWithChannels, users);
       const insight = await this.analyzeChunk(transcript);
       insight.dateRange = {
         start: chunkStart,
@@ -65,10 +80,17 @@ export class CommunityInsightService {
       insights.push(insight);
     }
 
-    // Add top reactions to each chunk
-    // insights.forEach(chunk => {
-    //   chunk.top_reactions = topReactedMessages;
-    // });
+    // If we have multiple chunks, consolidate them
+    if (chunks.length > 1) {
+      const consolidatedInsight = await this.consolidateChunks(insights);
+      return {
+        insights: [consolidatedInsight], // Replace multiple chunks with single consolidated chunk
+        dateRange: {
+          start: startDate,
+          end: endDate
+        }
+      };
+    }
 
     return {
       insights,
@@ -76,7 +98,6 @@ export class CommunityInsightService {
         start: startDate,
         end: endDate
       }
-      // topReactedMessages: [] // Commented out for now
     };
   }
 
@@ -136,6 +157,56 @@ ${transcript}`;
           end: new Date()
         },
         summary: "Failed to analyze this segment",
+        key_topics: [],
+        notable_interactions: [],
+        emerging_trends: []
+      } as InsightChunk;
+    }
+  }
+
+  private async consolidateChunks(chunks: InsightChunk[]): Promise<InsightChunk> {
+    const chunksJson = JSON.stringify(chunks, null, 2);
+    
+    const prompt = `You are analyzing multiple chunks of community discussion insights and need to consolidate them into a single coherent summary.
+    
+Review these separate analysis chunks and create a unified summary that:
+1. Identifies overarching themes and patterns across the entire time period
+2. Consolidates related discussions from different chunks
+3. Highlights the most significant developments and interactions
+4. Maintains chronological context where relevant
+
+Previous analysis chunks:
+${chunksJson}
+
+Respond in the same JSON format as the input chunks, but provide a consolidated view that tells a coherent story across the entire time period.`;
+
+    const response = await this.model.invoke([
+      new HumanMessage(prompt)
+    ]);
+
+    try {
+      let content = typeof response.content === 'string' 
+        ? response.content 
+        : JSON.stringify(response.content);
+      
+      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const consolidated = JSON.parse(content) as InsightChunk;
+      
+      // Ensure dateRange spans all chunks
+      consolidated.dateRange = {
+        start: new Date(Math.min(...chunks.map(c => c.dateRange.start.getTime()))),
+        end: new Date(Math.max(...chunks.map(c => c.dateRange.end.getTime())))
+      };
+      
+      return consolidated;
+    } catch (e) {
+      console.error("Failed to consolidate chunks:", e);
+      return {
+        dateRange: {
+          start: chunks[0].dateRange.start,
+          end: chunks[chunks.length - 1].dateRange.end
+        },
+        summary: "Failed to consolidate analysis chunks",
         key_topics: [],
         notable_interactions: [],
         emerging_trends: []
