@@ -10,13 +10,9 @@ async function generateCommunityInsights(
   channelNamesOrIds?: string[]
 ) {
   try {
-    const serverId = getServerIdByName(serverNameOrId);
-    if (!serverId) {
-      console.error('Server not found:', serverNameOrId);
-      return;
-    }
+    const serverId = getServerIdByName(serverNameOrId) || serverNameOrId;
 
-    const channelIds = channelNamesOrIds 
+    const channelIds = channelNamesOrIds && channelNamesOrIds[0] !== 'undefined'
       ? getChannelIdsByName(serverId, channelNamesOrIds)
       : undefined;
 
