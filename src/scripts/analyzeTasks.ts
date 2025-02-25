@@ -1,14 +1,20 @@
 import 'dotenv/config';
 import { SupabaseService } from '../services/SupabaseService';
 import { TaskRewardService } from '../services/TaskRewardService';
-import { CommunityRules, DEFAULT_COMMUNITY_RULES } from '../models/CommunityProfile';
 import { getServerIdByName, getChannelIdsByName } from '../utils/communityHelpers';
+import { RewardGuidelines } from '../types/task';
 
 // Use defaults or merge with custom settings
-const communityRules: CommunityRules = {
-  ...DEFAULT_COMMUNITY_RULES,
-  // Override with custom settings as needed
+const rewardGuidelines: RewardGuidelines = {
+  min_points: 10,
+  max_points: 1000,
+  monetary_thresholds: {
+    min_value: 5,
+    max_value: 500
+  }
 };
+
+const availableBadges = ['helper', 'builder', 'contributor'];
 
 async function analyzeTasksInChannels(
   startDate: Date,
@@ -17,18 +23,14 @@ async function analyzeTasksInChannels(
   channelNamesOrIds?: string[]
 ) {
   try {
-    const serverId = getServerIdByName(serverNameOrId);
-    if (!serverId) {
-      console.error('Server not found:', serverNameOrId);
-      return;
-    }
+    const serverId = getServerIdByName(serverNameOrId) || serverNameOrId;
 
-    const channelIds = channelNamesOrIds 
+    const channelIds = channelNamesOrIds && channelNamesOrIds[0] !== 'undefined'
       ? getChannelIdsByName(serverId, channelNamesOrIds)
       : undefined;
 
     const supabase = new SupabaseService();
-    const taskService = new TaskRewardService(communityRules);
+    const taskService = new TaskRewardService(rewardGuidelines, availableBadges);
     
     console.log('Analyzing messages from:', startDate, 'to:', endDate);
     console.log('Server:', serverNameOrId);

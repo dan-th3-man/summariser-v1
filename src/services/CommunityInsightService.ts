@@ -56,22 +56,8 @@ export class CommunityInsightService {
       const chunkDates = chunks[i].map(m => new Date(m.created_at));
       const chunkStart = new Date(Math.min(...chunkDates.map(d => d.getTime())));
       const chunkEnd = new Date(Math.max(...chunkDates.map(d => d.getTime())));
-      
-      const messagesWithChannels = chunks[i].map(msg => {
-        const user = users[msg.user_id];
-        const username = user?.username || user?.display_name || 'unknown';
-        const serverData = COMMUNITY_SERVERS[msg.server_id];
-        const channelName = serverData?.channels[msg.channel_id];
-        
-        return {
-          message: msg.content,
-          timestamp: msg.created_at,
-          username: username,
-          channelName: channelName || msg.channel_name || msg.channel_id
-        };
-      });
 
-      const transcript = formatMessages(messagesWithChannels, users);
+      const transcript = formatMessages(chunks[i], users);
       const insight = await this.analyzeChunk(transcript);
       insight.dateRange = {
         start: chunkStart,
