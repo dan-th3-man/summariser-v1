@@ -25,23 +25,6 @@ export class CommunityInsightService {
   async generateInsights(messages: ChatMessage[], users: Record<string, any>): Promise<CommunityInsight> {
     const chunks = chunkMessages(messages, 300);
     const insights: InsightChunk[] = [];
-    
-    /* Commenting out reactions logic for now
-    // Get reactions for all messages
-    const messageIds = messages.map(m => m.id);
-    const reactions = await this.supabase.getMessageReactions(messageIds);
-    
-    // Sort messages by reaction count
-    const topReactedMessages = messages
-      .filter(m => reactions[m.id]?.length > 0)
-      .sort((a, b) => (reactions[b.id]?.length || 0) - (reactions[a.id]?.length || 0))
-      .slice(0, 5)
-      .map(m => ({
-        messageContent: typeof m.content === 'object' ? (m.content as any).text : m.content,
-        reactions: this.groupReactions(reactions[m.id]),
-        url: reactions[m.id][0]?.url || ''
-      }));
-    */
 
     // Get date range from messages
     const dates = messages.map(m => new Date(m.created_at));
@@ -212,37 +195,17 @@ Respond in the same JSON format as the input chunks, but provide a consolidated 
     const outputPath = getOutputPath('insights', serverName, filename);
     
     let markdown = `# Community Insights\n`;
-    markdown += `## Server: ${serverName}\n`;
     if (channelNames?.length) {
       markdown += `## Channels: ${channelNames.join(', ')}\n`;
     }
-    markdown += `## Date Range: ${formatDate(insight.dateRange.start)} to ${formatDate(insight.dateRange.end)}\n\n`;
-
-    // Add Top Reactions section at the start
-    markdown += '## Most Reacted Messages\n\n';
-    insight.insights.forEach(chunk => {
-      if (chunk.top_reactions?.length) {
-        chunk.top_reactions.forEach((msg, index) => {
-          markdown += `### ${index + 1}. Message\n`;
-          markdown += `> ${msg.messageContent}\n\n`;
-          markdown += '**Reactions:**\n';
-          msg.reactions.forEach(r => {
-            markdown += `- ${r.emoji}: ${r.count}\n`;
-          });
-          markdown += `\n[View in Discord](${msg.url})\n\n`;
-        });
-      }
-    });
-    markdown += '---\n\n';
 
     // Format each chunk as a separate section
     insight.insights.forEach((chunk, index) => {
-      markdown += `## Analysis ${index + 1} (${formatDate(chunk.dateRange.start)} to ${formatDate(chunk.dateRange.end)})\n\n`;
       
-      markdown += '### Summary\n';
+      markdown += '## Summary\n';
       markdown += chunk.summary + '\n\n';
 
-      markdown += '### Key Topics Discussed\n\n';
+      markdown += '## Key Topics Discussed\n\n';
       chunk.key_topics.forEach(topic => {
         markdown += `#### ${topic.name}\n`;
         markdown += `- Description: ${topic.description}\n`;
@@ -254,7 +217,7 @@ Respond in the same JSON format as the input chunks, but provide a consolidated 
         markdown += '\n';
       });
 
-      markdown += '### Notable Interactions\n\n';
+      markdown += '## Notable Interactions\n\n';
       chunk.notable_interactions.forEach(interaction => {
         markdown += `#### ${interaction.type}\n`;
         markdown += `- Description: ${interaction.description}\n`;
@@ -262,7 +225,7 @@ Respond in the same JSON format as the input chunks, but provide a consolidated 
         markdown += `- Impact: ${interaction.impact}\n\n`;
       });
 
-      markdown += '### Emerging Trends\n\n';
+      markdown += '## Emerging Trends\n\n';
       chunk.emerging_trends.forEach(trend => {
         markdown += `- ${trend}\n`;
       });
@@ -271,17 +234,5 @@ Respond in the same JSON format as the input chunks, but provide a consolidated 
     });
 
     return { markdown, filename: outputPath };
-  }
-
-  private groupReactions(reactions: any[]): Array<{ emoji: string, count: number }> {
-    const counts = reactions.reduce((acc, r) => {
-      acc[r.emoji] = (acc[r.emoji] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(counts).map(([emoji, count]) => ({
-      emoji,
-      count: count as number
-    }));
   }
 } 
