@@ -246,7 +246,6 @@ Respond in the same JSON format as the input chunks, but provide a consolidated 
     const outputPath = getOutputPath('tasks', serverName, filename);
     
     let markdown = `# Community Tasks and Contributions\n`;
-    markdown += `## Server: ${serverName}\n`;
     if (channelNames?.length) {
       markdown += `## Channels: ${channelNames.join(', ')}\n`;
     }
